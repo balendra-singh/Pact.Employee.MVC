@@ -1,0 +1,491 @@
+﻿
+<style>
+    .the-legend {
+        border-style: none;
+        border-width: 0;
+        font-size: 23px;
+        line-height: 28px;
+        margin-bottom: 0;
+        width: auto;
+        padding: 0 10px;
+        border: 1px solid #110a0a;
+    }
+
+    .dateInlines {
+        width: 20px !important;
+    }
+
+    .the-fieldset {
+        border: 1px solid #110a0a;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+</style>
+
+
+<div class="form-horizontal">
+    <br />
+    <div id="divAlert"></div>
+    
+    <fieldset class="the-fieldset">
+        <legend class="the-legend">Add/Edit Employee Detail</legend>
+
+        <div class="form-group form-inline">
+            <label class="col-sm-7">
+                <b>Employee Number</b>
+            </label>
+            <div class="col-sm-5">
+                <input type="number" maxlength="50" id="EmployeeNumber" class="form-control" placeholder="Enter Number" />
+            </div>
+        </div>
+
+        <div class="form-group form-inline">
+            <label class="col-sm-7">
+                <b>Employee Name</b>
+            </label>
+            <div class="col-sm-5">
+                <input type="text" maxlength="50" id="EmployeeName" class="form-control" placeholder="Enter Name" />
+            </div>
+        </div>
+
+        <div class="form-group form-inline">
+            <label class="col-sm-7">
+                <b>Date Of Birth</b>
+            </label>
+            <div class="col-sm-5">
+                <input type='text' class="form-control" id="DateOfBirth" placeholder="Select Date Of Birth">
+            </div>
+        </div>
+
+        <div class="form-group form-inline">
+            <label class="col-sm-7">
+                <b>Phone Number</b>
+            </label>
+            <div class="col-sm-5">
+                <input type="number" maxlength="50" id="PhoneNumber" class="form-control" placeholder="Enter Phone Number" />
+            </div>
+        </div>
+
+        <div class="form-group form-inline">
+            <label class="col-sm-7">
+                <b>Address Line 1</b>
+            </label>
+            <div class="col-sm-5">
+                <input type="text" maxlength="50" id="AddressLine1" class="form-control" placeholder="Enter Flat/Building/Society" />
+            </div>
+        </div>
+        <div class="form-group form-inline">
+            <label class="col-sm-7">
+                <b>Address Line 2</b>
+            </label>
+            <div class="col-sm-5">
+                <input type="text" maxlength="50" id="AddressLine2" class="form-control" placeholder="Enter Landmark/Area" />
+            </div>
+        </div>
+
+        <div class="form-group form-inline">
+            <label class="col-sm-7">
+                <b>City</b>
+            </label>
+            <div class="col-sm-5">
+                <input type="text" maxlength="30" id="City" class="form-control" placeholder="Enter City Name" />
+            </div>
+        </div>
+
+        <div class="form-group form-inline">
+            <label class="col-sm-7">
+                <b>Post/PIN Code</b>
+            </label>
+            <div class="col-sm-5">
+                <input type="text" maxlength="10" id="PinCode" class="form-control" placeholder="Enter Postal Code" />
+            </div>
+        </div>
+
+        <div class="form-group form-inline">
+            <label class="col-sm-7">
+                <b>Job Profile</b>
+            </label>
+            <div class="col-sm-5">
+                <select id="JobProfileId" class="form-control">
+                    <option value="1">Director</option>
+                    <option value="2">Manager</option>
+                    <option value="3">Trainee</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group form-inline">
+            <label class="col-sm-7">
+                <b>Active?</b>
+            </label>
+            <div class="col-sm-5">
+                <input type="radio" name="empStatus" id="rdEmployeeActive" value="1">
+                <strong>Yes</strong>
+                <span>&nbsp;</span>
+                <input type="radio" name="empStatus" id="rdEmployeeInactive" value="0">
+                <strong>No</strong>
+            </div>
+        </div>
+        <div class="form-group container" style="max-width:max-content;">
+            <button type="button" class="btn btn-default float-left" onclick="return ClearValues();">Cancel</button>&nbsp;&nbsp;&nbsp;
+            <button type="button" class="btn btn-primary float-right" id="btnAdd" onclick="return AddEmployee();">Save</button>
+            <button type="button" class="btn btn-primary float-right" id="btnUpdate" style="display:none;" onclick="UpdateEmployee();">Update</button>
+        </div>
+    </fieldset>
+
+
+</div>
+
+
+<table class="table table-bordered table-hover table-active" id="empTable">
+    <thead id="SkinColor">
+        <tr>
+            <th>Employee Number</th>
+            <th>Employee Name</th>
+            <th>Date Of Birth</th>
+            <th>Phone Number</th>
+            <th>Address</th>
+            <th>Job Profile</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+
+@section Scripts {
+
+    <!-- Datepicker -->
+    <link href='~/lib/bootstrap-datepicker.min.css' rel='stylesheet' type='text/css'>
+    <script src='~/lib//bootstrap-datepicker.min.js' type='text/javascript'></script>
+    @*<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>*@
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.70/jquery.blockUI.js"></script>
+
+    <script type="text/javascript">
+
+        var employeeModelObj = null;
+
+        $(document).ready(function () {
+            $('#DateOfBirth').datepicker();
+
+            LoadEmployeeDetails();
+
+        });
+
+        function LoadEmployeeDetails() {
+
+            ClearValues();
+
+            var employeeTable = $("#empTable tbody");
+
+            $.ajax({
+                url: '/Employee/GetAllEmployeeList',
+                method: "GET",
+                async: false,
+                beforeSend: function () {
+                    $.blockUI({
+                        message: '<h3>Fetching Details...</h3>',
+                        css: { border: '3px solid #a00' }
+                    });
+                },
+                complete: function () {
+                    $.unblockUI();
+                },
+                success: function (data) {
+
+                    $("#empTable td").remove();
+
+                  
+                    $.each(data, function (a, b) {
+                        var empStatus = "Activate";
+                        if (b.Status)
+                            empStatus = "De-Activate";
+
+
+                        $("#empTable").append("<tr><td>" + b.EmployeeNumber + "</td>" +
+                            "<td>" + b.Name + "</td>" +
+                            "<td>" + b.DateOfBirthString + "</td>" +
+                            "<td>" + b.PhoneNumber + "</td>" +
+                            "<td>" + b.AddressString + "</td>" +
+                            "<td>" + b.JobProfile + "</td>" +
+                            '<td><a href="#" onclick="return EditEmployee(' + b.EmployeeNumber + ')">Edit</a>&nbsp;&nbsp;<a href="#" onclick="ChangeEmployeeStatus(' + b.EmployeeNumber + ')">' + empStatus+ '</a></td></tr>');
+                    });
+                }
+            });
+        }
+
+        function EditEmployee(employeeNumber) {
+
+            $.ajax({
+                url: "/Employee/GetEmployee?employeeNumber=" + employeeNumber,
+                typr: "GET",
+                dataType: "json",
+                async: false,
+                beforeSend: function () {
+                    $.blockUI({
+                        message: '<h3>Fetching Details...</h3>',
+                        css: { border: '3px solid #a00' }
+                    });
+                },
+                complete: function () {
+                    $.unblockUI();
+                },
+                success: function (result) {
+
+                    debugger;
+                    $('#EmployeeNumber').val(result.EmployeeNumber);
+                    $('#EmployeeName').val(result.Name);
+
+                    $('#DateOfBirth').val(result.DateOfBirthString);
+                    $('#PhoneNumber').val(result.PhoneNumber);
+
+                    $('#AddressLine1').val(result.AddressLine1);
+                    $('#AddressLine2').val(result.AddressLine2);
+
+                    $('#City').val(result.City);
+                    $('#PinCode').val(result.PinCode);
+
+                    $('#JobProfileId').val(result.JobProfileId);
+                    $('#PinCode').val(result.PinCode);
+
+                    if (result.Status) {
+                        $("#rdEmployeeActive").prop("checked", true);
+
+                    } else {
+                        $("#rdEmployeeInactive").prop("checked", true);
+                    }
+
+                    $('#btnAdd').hide();
+                    $('#btnUpdate').show();                                        
+                },
+                error: function (errormessage) {
+                    alert(errormessage.responseText);
+                }
+            });
+            
+        }
+
+        function ChangeEmployeeStatus(employeeNumber) {
+
+            $.ajax({
+                url: "/Employee/UpdateEmployeeStatus?employeeNumber=" + employeeNumber,
+                typr: "GET",
+                dataType: "json",
+                async: false,
+                beforeSend: function () {
+                    $.blockUI({
+                        message: '<h3>Updating Employee Status...</h3>',
+                        css: { border: '3px solid #a00' }
+                    });
+                },
+                complete: function () {
+                    $.unblockUI();
+                },
+                success: function (result) {
+                    //var alertHtml = '<div class="custom-alerts alert alert-' + result.MessageType + ' fade in"><button type="button" class="close" data-dismiss="alert" aria-hidden="true"></button>' + result.ErrorMessage + '</div>';                    
+                    var alertHtml = '<div class="alert alert-' + result.MessageType + ' alert-dismissible fade show" role="alert">' + result.ErrorMessage + '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
+                    $("#divAlert").html(alertHtml);
+                    LoadEmployeeDetails();
+                    
+                },
+                error: function (errormessage) {
+                    var alertHtml = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' + errormessage.responseText + '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
+                    $("#divAlert").html(alertHtml);                    
+                }
+            });
+        }
+
+        function AddEmployee() {
+            var res = validate();
+            if (res != true || res == undefined) {
+                return false;
+            }
+
+            BuildModelData();
+
+            $.ajax({
+                url: "/Employee/AddEmployee",
+                data: employeeModelObj,
+                type: "POST",
+                dataType: "json",
+                async: false,
+                beforeSend: function () {
+                    $.blockUI({
+                        message: '<h3>Adding Details...</h3>',
+                        css: { border: '3px solid #a00' }
+                    });
+                },
+                complete: function () {
+                    $.unblockUI();
+                },
+                success: function (result) {
+                    
+                    ClearValues();
+                    var alertHtml = '<div class="alert alert-' + result.MessageType + ' alert-dismissible fade show" role="alert">' + result.ErrorMessage + '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
+                    $("#divAlert").html(alertHtml);
+                    LoadEmployeeDetails();
+                },
+                error: function (errormessage) {
+                    var alertHtml = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' + errormessage.responseText + '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
+                    $("#divAlert").html(alertHtml);
+                }
+            });
+        }
+
+        function UpdateEmployee() {
+            var res = validate();
+            if (res != true || res == undefined) {
+                return false;
+            }
+
+            BuildModelData();
+
+            $.ajax({
+                url: "/Employee/UpdateEmployee",
+                data: employeeModelObj,
+                type: "POST",
+                dataType: "json",
+                async: false,
+                beforeSend: function () {
+                    $.blockUI({
+                        message: '<h3>Updating Details...</h3>',
+                        css: { border: '3px solid #a00' }
+                    });
+                },
+                complete: function () {
+                    $.unblockUI();
+                },
+                success: function (result) {
+
+                    ClearValues();
+                    var alertHtml = '<div class="alert alert-' + result.MessageType + ' alert-dismissible fade show" role="alert">' + result.ErrorMessage + '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
+                    $("#divAlert").html(alertHtml);
+                    LoadEmployeeDetails();
+                },
+                error: function (errormessage) {
+                    var alertHtml = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' + errormessage.responseText + '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
+                    $("#divAlert").html(alertHtml);
+                }
+            });
+        }
+
+        function BuildModelData() {
+
+            employeeModelObj = {
+
+                "EmployeeNumber": $('#EmployeeNumber').val(),
+                "Name": $('#EmployeeName').val(),
+
+                "DateOfBirth": $('#DateOfBirth').val(),
+                "PhoneNumber": $('#PhoneNumber').val(),
+
+                "AddressLine1": $('#AddressLine1').val(),
+                "AddressLine2": $('#AddressLine2').val(),
+
+                "City": $('#City').val(),
+                "PinCode": $('#PinCode').val(),
+
+                "JobProfileId": $('#JobProfileId').val(),
+                "Status": $('#rdEmployeeActive').prop("checked") == true ? true : false,                                
+            };
+        }
+
+        function validate() {
+
+            let isValid = true;
+
+            if ($('#EmployeeNumber').val() == "") {
+                $('#EmployeeNumber').css('border-color', 'Red');
+                isValid = false;
+            }
+            else {
+                $('#EmployeeNumber').css('border-color', 'lightgrey');
+            }
+
+            if ($('#EmployeeName').val() == "") {
+                $('#EmployeeName').css('border-color', 'Red');
+                isValid = false;
+            }
+            else {
+                $('#EmployeeName').css('border-color', 'lightgrey');
+            }
+
+            if ($('#DateOfBirth').val() == "") {
+                $('#DateOfBirth').css('border-color', 'Red');
+                isValid = false;
+            }
+            else {
+                $('#DateOfBirth').css('border-color', 'lightgrey');
+            }
+
+            if ($('#PhoneNumber').val() == "") {
+                $('#PhoneNumber').css('border-color', 'Red');
+                isValid = false;
+            }
+            else {
+                $('#PhoneNumber').css('border-color', 'lightgrey');
+            }
+
+            if ($('#AddressLine1').val() == "") {
+                $('#AddressLine1').css('border-color', 'Red');
+                isValid = false;
+            }
+            else {
+                $('#AddressLine1').css('border-color', 'lightgrey');
+            }
+
+            if ($('#AddressLine2').val() == "") {
+                $('#AddressLine2').css('border-color', 'Red');
+                isValid = false;
+            }
+            else {
+                $('#AddressLine2').css('border-color', 'lightgrey');
+            }
+
+            if ($('#City').val() == "") {
+                $('#City').css('border-color', 'Red');
+                isValid = false;
+            }
+            else {
+                $('#City').css('border-color', 'lightgrey');
+            }
+
+            if ($('#PinCode').val() == "") {
+                $('#PinCode').css('border-color', 'Red');
+                isValid = false;
+            }
+            else {
+                $('#PinCode').css('border-color', 'lightgrey');
+            }
+
+            return isValid;
+        }
+
+        function ClearValues() {
+
+            $('#EmployeeNumber').val("");
+            $('#EmployeeName').val("");
+
+            $('#DateOfBirth').val("");
+            $('#PhoneNumber').val("");
+
+            $('#AddressLine1').val("");
+            $('#AddressLine2').val("");
+
+            $('#City').val("");
+            $('#PinCode').val("");
+
+            $('#JobProfileId').val("1");
+            $('#PinCode').val("");
+
+            $("#rdEmployeeActive").prop("checked", true);
+            $("#rdEmployeeInactive").prop("checked", false);
+
+            $('#btnUpdate').hide();
+            $('#btnAdd').show();            
+        }
+
+
+    </script>
+
+}
